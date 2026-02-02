@@ -67,47 +67,70 @@ class UserController extends Controller
     public function upsert(Request $request, $userId)
     {
         try {
-            DB::beginTransaction();
+            $result = DB::transaction(function () use ($request, $userId) {
 
-            $userRequest = json_decode($request->get('user'), true);
-            $imageProfileRequest = $request->file('profile_image');
+                $userRequest = $request->input('user');
+                if (is_string($userRequest)) {
+                    $userRequest = json_decode($userRequest, true);
+                }
 
-            $isUpdate = false;
+                $imageProfileRequest = $request->file('profile_image');
 
-            if ($userId !== 'FAKE_ID') {
-                $isUpdate = true;
-            }
+                if (!is_array($userRequest) || empty($userRequest)) {
+                    return [
+                        'status' => 422,
+                        'body' => [
+                            'success' => false,
+                            'message' => 'El campo user es requerido y debe ser un objeto válido.',
+                        ],
+                    ];
+                }
 
-            if ($userRequest !== null) {
-                $user = User::findOrNew($userId);
+                $isUpdate = $userId !== 'FAKE_ID';
+
+                if ($isUpdate) {
+                    $user = User::find($userId) ?? new User();
+                } else {
+                    $user = new User();
+                }
+
                 $user->fill($userRequest);
                 $user->saveOrFail();
-            }
 
-            if ($imageProfileRequest !== null) {
-                $imageUser = $user->imageUser ?? new ImageUser();
-                if (!empty($imageUser->url_image)) {
-                    UploadFiles::deleteFile($imageUser->url_image);
+                if ($imageProfileRequest) {
+                    $user->loadMissing('imageUser');
+
+                    $imageUser = $user->imageUser ?? new ImageUser();
+
+                    $newUrlImage = UploadFiles::storeFile($imageProfileRequest, 'users/images');
+
+                    if (!empty($imageUser->url_image)) {
+                        UploadFiles::deleteFile($imageUser->url_image);
+                    }
+
+                    $imageUser->url_image = $newUrlImage;
+                    $imageUser->user_id = $user->id;
+                    $imageUser->saveOrFail();
                 }
-                $newUrlImage = UploadFiles::storeFile($imageProfileRequest, 'users/images');
-                $imageUser->url_image = $newUrlImage;
-                $imageUser->user_id = $user->id;
-                $imageUser->saveOrFail();
-            }
 
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'title' => '¡Usuario' . ($isUpdate ? ' modificado' : ' agregado') . '!',
-                'message' => 'El usuario ha sido ' . ($isUpdate ? ' modificado' : ' agregado')  . ' con exito',
-            ]);
+                return [
+                    'status' => 200,
+                    'body' => [
+                        'success' => true,
+                        'title' => '¡Usuario' . ($isUpdate ? ' modificado' : ' agregado') . '!',
+                        'message' => 'El usuario ha sido ' . ($isUpdate ? ' modificado' : ' agregado') . ' con éxito',
+                    ],
+                ];
+            });
+
+            return response()->json($result['body'], $result['status']);
+
         } catch (\Throwable $th) {
-            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar datos',
                 'errorMessage' => $th->getMessage(),
-            ]);;
+            ], 500);
         }
     }
 
@@ -127,37 +150,64 @@ class UserController extends Controller
 
     public function changePassword(Request $request)
     {
-        $userId = (Auth::guard('admin')->user())->id;
-        DB::beginTransaction();
+        $userId = Auth::guard('admin')->id();
+
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:8|confirmed', 
+        ]);
+
         try {
-            $user = User::find($userId);
+            $result = DB::transaction(function () use ($request, $userId) {
 
-            $currenPassword = $request->get('current_password');
+                $user = User::find($userId);
 
-            if (!Hash::check($currenPassword, $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'title' => 'Error',
-                    'message' => 'Las credenciales no coinciden',
-                ]);
-            } else {
-                $user->password = $request->get('password');
+                if (!$user) {
+                    return [
+                        'status' => 404,
+                        'body' => [
+                            'success' => false,
+                            'title' => 'Error',
+                            'message' => 'Usuario no encontrado',
+                        ],
+                    ];
+                }
+
+                $currentPassword = $request->input('current_password');
+
+                if (!Hash::check($currentPassword, $user->password)) {
+                    return [
+                        'status' => 422,
+                        'body' => [
+                            'success' => false,
+                            'title' => 'Error',
+                            'message' => 'Las credenciales no coinciden',
+                        ],
+                    ];
+                }
+
+                $user->password = Hash::make($request->input('password'));
                 $user->save();
-                DB::commit();
-                return response()->json([
-                    'success' => true,
-                    'title' => 'Exito',
-                    'message' => '¡Contraseña actualizada correctamente!',
-                ]);
-            }
+
+                return [
+                    'status' => 200,
+                    'body' => [
+                        'success' => true,
+                        'title' => 'Éxito',
+                        'message' => '¡Contraseña actualizada correctamente!',
+                    ],
+                ];
+            });
+
+            return response()->json($result['body'], $result['status']);
+
         } catch (\Throwable $th) {
-            DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => $th->getMessage(),
-                'line' => $th->getLine(),
-                'file' => $th->getFile()
-            ]);
+                'message' => 'Error al actualizar contraseña',
+                'errorMessage' => $th->getMessage(),
+            ], 500);
         }
     }
+
 }

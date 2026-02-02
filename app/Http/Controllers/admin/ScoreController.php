@@ -43,95 +43,153 @@ class ScoreController extends Controller
 
     public function upsert(Request $request, $aspirantId)
     {
-
         try {
-            DB::beginTransaction();
+            $result = DB::transaction(function () use ($request, $aspirantId) {
 
-            $scoreRequest = json_decode($request->get('score'), true);
+                $scoreRequest = $request->input('score');
+                if (is_string($scoreRequest)) {
+                    $scoreRequest = json_decode($scoreRequest, true);
+                }
 
-            $aspirant = Aspirant::with(['interview'])->find($aspirantId);
+                if (!is_array($scoreRequest) || empty($scoreRequest)) {
+                    return [
+                        'status' => 422,
+                        'body' => [
+                            'success' => false,
+                            'message' => 'El campo score es requerido y debe ser un objeto válido.',
+                        ],
+                    ];
+                }
 
-            if (! isset($aspirant->interview)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El aspirante aun no ha sido entrevistado.',
-                ]);
-            }
+                $courseScore      = $scoreRequest['course_score'] ?? null;
+                $correctReagents  = $scoreRequest['correct_reagents'] ?? null;
+                $interviewScore   = $scoreRequest['interview_score'] ?? null;
 
-            $courseScore = $scoreRequest['course_score'];
-            $correctReagents = $scoreRequest['correct_reagents'];
-            $interviewScore = $scoreRequest['interview_score'];
+                if (!is_numeric($courseScore) || !is_numeric($correctReagents) || !is_numeric($interviewScore)) {
+                    return [
+                        'status' => 422,
+                        'body' => [
+                            'success' => false,
+                            'message' => 'course_score, correct_reagents e interview_score deben ser numéricos.',
+                        ],
+                    ];
+                }
 
-            $courseScorepercentage = round($courseScore * 0.25, 2);
-            $correctReagentsPercentage = round(($correctReagents / 160) * 100, 2);
-            $weighing = round($correctReagentsPercentage * 0.25, 2);
-            $interviewScorePercentage = round($interviewScore * 0.50, 2);
-            $finalScore = round($courseScorepercentage + $weighing + $interviewScorePercentage, 2);
+                $courseScore = (float)$courseScore;
+                $correctReagents = (float)$correctReagents;
+                $interviewScore = (float)$interviewScore;
 
-            if (isset($aspirant->result)) {
-                $isUpdate = true;
-            } else {
-                $isUpdate = false;
-            }
+                $aspirant = Aspirant::with(['interview', 'result'])->find($aspirantId);
 
-            if ($scoreRequest !== null) {
-                $score = $aspirant->result ?? new Result;
-                $score->course_score = $scoreRequest['course_score'];
-                $score->course_score_percentage = strval($courseScorepercentage).'%';
-                $score->correct_reagents = $scoreRequest['correct_reagents'];
-                $score->correct_reagents_percentage = strval($correctReagentsPercentage).'%';
-                $score->weighing = strval($weighing).'%';
-                $score->interview_score = $scoreRequest['interview_score'];
-                $score->interview_score_percentage = strval($interviewScorePercentage).'%';
+                if (!$aspirant) {
+                    return [
+                        'status' => 404,
+                        'body' => [
+                            'success' => false,
+                            'message' => 'Aspirante no encontrado.',
+                        ],
+                    ];
+                }
+
+                if (!$aspirant->interview) {
+                    return [
+                        'status' => 409,
+                        'body' => [
+                            'success' => false,
+                            'message' => 'El aspirante aún no ha sido entrevistado.',
+                        ],
+                    ];
+                }
+
+                $courseScorepercentage = round($courseScore * 0.25, 2);
+
+                $totalReagents = 160;
+                $correctReagentsPercentage = round(($correctReagents / $totalReagents) * 100, 2);
+
+                $weighing = round($correctReagentsPercentage * 0.25, 2);
+                $interviewScorePercentage = round($interviewScore * 0.50, 2);
+
+                $finalScore = round($courseScorepercentage + $weighing + $interviewScorePercentage, 2);
+
+                $isUpdate = (bool) $aspirant->result;
+
+                $score = $aspirant->result ?? new Result();
+                $score->course_score = $courseScore;
+                $score->course_score_percentage = $courseScorepercentage . '%';
+
+                $score->correct_reagents = (int)$correctReagents;
+                $score->correct_reagents_percentage = $correctReagentsPercentage . '%';
+
+                $score->weighing = $weighing . '%';
+
+                $score->interview_score = $interviewScore;
+                $score->interview_score_percentage = $interviewScorePercentage . '%';
+
                 $score->final_score = $finalScore;
                 $score->aspirant_id = $aspirantId;
+
                 $score->saveOrFail();
-            }
 
-            DB::commit();
+                return [
+                    'status' => 200,
+                    'body' => [
+                        'success' => true,
+                        'title' => '¡Puntaje' . ($isUpdate ? ' modificado' : ' agregado') . '!',
+                        'message' => 'El puntaje ha sido ' . ($isUpdate ? ' modificado' : ' agregado') . ' con éxito',
+                    ],
+                ];
+            });
 
-            return response()->json([
-                'success' => true,
-                'title' => '¡Puntaje'.($isUpdate ? ' modificado' : ' agregado').'!',
-                'message' => 'El puntaje ha sido '.($isUpdate ? ' modificado' : ' agregado').' con exito',
-            ]);
+            return response()->json($result['body'], $result['status']);
+
         } catch (\Throwable $th) {
-            DB::rollBack();
-
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar datos',
                 'errorMessage' => $th->getMessage(),
-            ]);
+            ], 500);
         }
     }
 
-    public function deleteScore($scoreId)
+
+   public function deleteScore($aspirantId)
     {
         try {
+            $result = DB::transaction(function () use ($aspirantId) {
 
-            DB::beginTransaction();
+                $score = Result::where('aspirant_id', $aspirantId)->first();
 
-            $score = Result::where('aspirant_id', '=', $scoreId)
-                ->first();
+                if (!$score) {
+                    return [
+                        'status' => 404,
+                        'body' => [
+                            'success' => false,
+                            'message' => 'Puntaje no encontrado para este aspirante.',
+                        ],
+                    ];
+                }
 
-            $score->delete();
+                $score->delete();
 
-            DB::commit();
+                return [
+                    'status' => 200,
+                    'body' => [
+                        'success' => true,
+                        'title'   => 'Puntaje Eliminado',
+                        'message' => 'El puntaje ha sido eliminado con éxito',
+                    ],
+                ];
+            });
 
-            return response()->json([
-                'success' => true,
-                'title' => 'Puntaje Eliminado',
-                'message' => 'El puntaje ha sido eliminado con exito',
-            ]);
+            return response()->json($result['body'], $result['status']);
+
         } catch (\Throwable $th) {
-            DB::rollBack();
-
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar datos',
+                'message' => 'Error al eliminar datos',
                 'errorMessage' => $th->getMessage(),
-            ]);
+            ], 500);
         }
     }
+
 }

@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Profile;
 use Illuminate\Database\Seeder;
-use Ramsey\Uuid\Uuid;
 
 class ProfilesSeeder extends Seeder
 {
@@ -15,15 +14,15 @@ class ProfilesSeeder extends Seeder
      */
     public function run()
     {
-        Profile::insert([
+        Profile::upsert([
             [
                 'id' => '1',
-                'name' => 'Administrador'
+                'name' => 'Administrador',
             ],
             [
                 'id' => '2',
-                'name' => 'Asesor'
-            ]
-        ]);
+                'name' => 'Asesor',
+            ],
+        ], ['id'], ['name']);
     }
 }

@@ -16,7 +16,7 @@ class AddColumnsToResultsTable extends Migration
         Schema::table('results', function (Blueprint $table) {
             $table->dropColumn('interview_score');
         });
-    
+
         Schema::table('results', function (Blueprint $table) {
             $table->double('course_score');
             $table->string('course_score_percentage');

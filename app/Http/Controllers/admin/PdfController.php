@@ -6,14 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Interview;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use Illuminate\Http\Request;
 
 class PdfController extends Controller
 {
     public function downloadPdf($userId)
     {
-        $domPdf = new Dompdf();
-        $options = new Options();
+        $domPdf = new Dompdf;
+        $options = new Options;
 
         $options->set('isHtml5ParserEnabled', true);
         $options->set('isRemoteEnabled', true);
@@ -21,13 +20,12 @@ class PdfController extends Controller
 
         $img = public_path('/logos/ita.png');
 
-        $query = Interview::where('aspirant_id', '=', $userId)
-            ->with('user', 'aspirant', 'questionAnswers.question', 'questionAnswers.answer')
-            ->get();
-        
-        $data[] = $query[0];
+        $interview = Interview::with(['user','aspirant','questionAnswers.question','questionAnswers.answer'])
+            ->where('aspirant_id', $userId)
+            ->firstOrFail();
 
-        // dd($img);
+        $data = [$interview];
+
 
         $htmlContent = view('pdf.Interview')
             ->with('data', $data)

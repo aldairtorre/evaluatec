@@ -11,8 +11,8 @@ class QuestionController extends Controller
 {
     public function indexContent(Request $request)
     {
-        $page = (int)$request->get('page',0);
-        $size = (int)$request->get('size',10);
+        $page = (int) $request->get('page', 0);
+        $size = (int) $request->get('size', 10);
         $skip = $page * $size;
 
         $filterContent = $request->get('filter-content', null);
@@ -22,11 +22,11 @@ class QuestionController extends Controller
             ->orderBy('number_question', 'asc');
 
         if ($filterContent !== null && $filterContent !== '') {
-            $query->where('question','like','%'.$filterContent.'%');
+            $query->where('question', 'like', '%'.$filterContent.'%');
         }
 
         if ($filterNumber !== null) {
-            $query->where('number_question', '=' , $filterNumber);
+            $query->where('number_question', '=', $filterNumber);
         }
 
         $count = $query->count();
@@ -52,7 +52,7 @@ class QuestionController extends Controller
             $questionExist = Question::find($questionId);
 
             if ($questionRequest !== null) {
-                $question = (isset($questionExist)) ? $questionExist : new Question();
+                $question = (isset($questionExist)) ? $questionExist : new Question;
                 $question->fill($questionRequest);
                 $question->saveOrFail();
             }
@@ -61,21 +61,23 @@ class QuestionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'title' => 'Pregunta '. ($questionExist ? 'Modificada' : 'Agregada'),
-                'message' => 'La pregunta ha sido ' . ($questionExist ? 'modificada' : 'agregada') . ' con exito',
+                'title' => 'Pregunta '.($questionExist ? 'Modificada' : 'Agregada'),
+                'message' => 'La pregunta ha sido '.($questionExist ? 'modificada' : 'agregada').' con exito',
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar datos',
                 'errorMessage' => $th->getMessage(),
-            ]);;
+            ]);
         }
-       
+
     }
 
-    public function deleteQuestion($questionId) {
+    public function deleteQuestion($questionId)
+    {
         try {
 
             DB::beginTransaction();
@@ -92,11 +94,12 @@ class QuestionController extends Controller
             ]);
         } catch (\Throwable $th) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar datos',
                 'errorMessage' => $th->getMessage(),
-            ]);;
+            ]);
         }
     }
 }

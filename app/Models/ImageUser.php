@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ImageUser extends Model
@@ -13,7 +12,7 @@ class ImageUser extends Model
 
     protected $fillable = [
         'url_image',
-        'user_id'
+        'user_id',
     ];
 
     public function user()

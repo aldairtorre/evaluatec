@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Aspirant extends Model
 {
@@ -21,7 +19,7 @@ class Aspirant extends Model
     ];
 
     protected $appends = [
-        'full_name'
+        'full_name',
     ];
 
     public function interview()
@@ -37,9 +35,16 @@ class Aspirant extends Model
     public function getFullNameAttribute(): string
     {
         $fullName = '';
-        if ($this->name != null) $fullName.= $this->name;
-        if ($this->first_last_name != null) $fullName.= ' ' . $this->first_last_name;
-        if ($this->second_last_name != null) $fullName.= ' ' . $this->second_last_name;
+        if ($this->name != null) {
+            $fullName .= $this->name;
+        }
+        if ($this->first_last_name != null) {
+            $fullName .= ' '.$this->first_last_name;
+        }
+        if ($this->second_last_name != null) {
+            $fullName .= ' '.$this->second_last_name;
+        }
+
         return trim($fullName);
     }
 }

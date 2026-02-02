@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Gender;
 use Illuminate\Database\Seeder;
-use Ramsey\Uuid\Uuid;
 
 class GenderSeeder extends Seeder
 {
@@ -15,15 +14,19 @@ class GenderSeeder extends Seeder
      */
     public function run()
     {
-        Gender::insert([
+        Gender::upsert(
             [
-                'id' => '1',
-                'name' => 'Masculino',
+                [
+                    'id' => 1,
+                    'name' => 'Masculino',
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Femenino',
+                ],
             ],
-            [
-                'id' => '2',
-                'name' => 'Femenino',
-            ],
-        ]);
+            ['id'],
+            ['name']
+        );
     }
 }

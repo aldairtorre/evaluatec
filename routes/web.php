@@ -1,9 +1,6 @@
 <?php
 
 use App\Http\Controllers\auth\LoginController;
-use App\Http\Controllers\prueba\PaymentController;
-use App\Http\Controllers\prueba\ProductController;
-use App\Http\Controllers\prueba\PruebaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware(['guest'])->group(function () {
-   
+
     Route::get('/', function () {
         return redirect()->route('auth.login');
     });
@@ -36,11 +33,11 @@ Route::prefix('auth/')
 
             Route::post('authenticate', [LoginController::class, 'authenticate'])
                 ->name('authenticate');
-                        
+
         });
     }
 
-);
+    );
 
 Route::get('web/{any}', function () {
     return view('admin.main');

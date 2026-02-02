@@ -36,9 +36,16 @@ class UserController extends Controller
         $query = User::with(['gender', 'profile', 'imageUser'])
             ->orderBy('id', 'desc');
 
-        if ($filterName !== null && $filterName !== '') {
-            $query->whereRaw("CONCAT(name,' ',first_last_name,' ',second_last_name) like '%" . $filterName . "%'");
+        if ($filterName !== null && trim($filterName) !== '') {
+            $term = trim($filterName);
+
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                ->orWhere('first_last_name', 'like', "%{$term}%")
+                ->orWhere('second_last_name', 'like', "%{$term}%");
+            });
         }
+
 
         if ($filterStatus !== null) {
             $query->where('active', '=', $filterStatus);
@@ -48,7 +55,6 @@ class UserController extends Controller
         $data = $query->skip($skip)
             ->take($size)
             ->get();
-
 
         return response()->json([
             'data' => $data,

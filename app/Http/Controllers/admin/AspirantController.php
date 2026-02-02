@@ -11,15 +11,21 @@ class AspirantController extends Controller
 {
     public function indexContent(Request $request)
     {
-        $page = (int)$request->get('page',0);
-        $size = (int)$request->get('size',10);
+        $page = (int) $request->get('page', 0);
+        $size = (int) $request->get('size', 10);
         $skip = $page * $size;
         $filterName = $request->get('filterName', null);
 
         $query = Aspirant::with('interview');
 
-        if ($filterName !== null && $filterName !== '') {
-            $query->whereRaw("CONCAT(name,' ',first_last_name,' ',second_last_name) like '%".$filterName."%'");
+        if ($filterName !== null && trim($filterName) !== '') {
+            $term = trim($filterName);
+
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                ->orWhere('first_last_name', 'like', "%{$term}%")
+                ->orWhere('second_last_name', 'like', "%{$term}%");
+            });
         }
 
         $count = $query->count();
@@ -34,39 +40,37 @@ class AspirantController extends Controller
         ]);
     }
 
-    public function upsert(Request $request, $aspirantId)
+    public function upsert(UpsertAspirantRequest $request, $aspirantId)
     {
+        $data = $request->validated();
+
         try {
-            DB::beginTransaction();
+            $result = DB::transaction(function () use ($data, $aspirantId) {
 
-            $aspirantRequest = json_decode($request->get('aspirant'), true);
-            $isUpdate = null;
+                $isUpdate = $aspirantId !== 'FAKE_ID';
 
-            if ($aspirantId === 'FAKE_ID') {
-                $isUpdate = true;
-            }else{
-                $isUpdate = false;
-            }
+                $aspirant = Aspirant::firstOrNew([
+                    'email' => $data['email'],
+                ]);
 
-            if ($aspirantRequest !== null) {
-                $aspirant = Aspirant::where('email', '=', $aspirantRequest['email'])->first() ?? new Aspirant();
-                $aspirant->fill($aspirantRequest);
+                $aspirant->fill($data);
                 $aspirant->saveOrFail();
-            }
 
-            DB::commit();
+                return $isUpdate;
+            });
+
             return response()->json([
                 'success' => true,
-                'title' => '¡Aspirante'. $isUpdate === true ? ' modificado!' : ' creado!',
-                'message' => 'El aspirante ha sido'. $isUpdate === true ? ' modificado' : ' creado'  .' con exito',
+                'title'   => '¡Aspirante' . ($result ? ' modificado!' : ' creado!'),
+                'message' => 'El aspirante ha sido' . ($result ? ' modificado' : ' creado') . ' con éxito',
             ]);
         } catch (\Throwable $th) {
-            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar datos',
                 'errorMessage' => $th->getMessage(),
-            ]);;
+            ], 500);
         }
     }
+
 }

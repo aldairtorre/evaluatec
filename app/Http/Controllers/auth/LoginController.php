@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
@@ -23,14 +21,15 @@ class LoginController extends Controller
                 $request->session()->regenerate();
                 $user = Auth::guard('admin')->user();
 
-                if (!$user->active) {
+                if (! $user->active) {
                     Auth::logout();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
+
                     return response()->json([
                         'success' => false,
                         'title' => '¡Acceso denegado!',
-                        'message' => 'Usuario deshabilitado'
+                        'message' => 'Usuario deshabilitado',
                     ]);
                 }
 
@@ -40,7 +39,7 @@ class LoginController extends Controller
                     'success' => true,
                     'title' => '¡Acceso concedido!',
                     'message' => 'Bienvenido al sistema',
-                    'user' => $user
+                    'user' => $user,
                 ]);
             } else {
                 return response()
@@ -65,6 +64,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->flush();
         $request->session()->regenerate();
+
         return response()->json([
             'success' => true,
             'title' => '¡Sesión cerrada!',

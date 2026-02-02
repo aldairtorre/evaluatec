@@ -2,15 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -26,19 +23,18 @@ class User extends Authenticatable
         'password',
         'phone',
         'gender_id',
-        'profile_id'
+        'profile_id',
     ];
 
     protected $appends = [
-        'full_name'
+        'full_name',
     ];
-   
+
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-   
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
@@ -66,9 +62,16 @@ class User extends Authenticatable
     public function getFullNameAttribute(): string
     {
         $fullName = '';
-        if ($this->name != null) $fullName.= $this->name;
-        if ($this->first_last_name != null) $fullName.= ' ' . $this->first_last_name;
-        if ($this->second_last_name != null) $fullName.= ' ' . $this->second_last_name;
+        if ($this->name != null) {
+            $fullName .= $this->name;
+        }
+        if ($this->first_last_name != null) {
+            $fullName .= ' '.$this->first_last_name;
+        }
+        if ($this->second_last_name != null) {
+            $fullName .= ' '.$this->second_last_name;
+        }
+
         return trim($fullName);
     }
 

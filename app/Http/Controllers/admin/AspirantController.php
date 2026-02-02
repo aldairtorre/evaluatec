@@ -40,9 +40,9 @@ class AspirantController extends Controller
         ]);
     }
 
-    public function upsert(UpsertAspirantRequest $request, $aspirantId)
+    public function upsert(Request $request, $aspirantId)
     {
-        $data = $request->validated();
+        $data = json_decode($request->get('aspirant'), true);
 
         try {
             $result = DB::transaction(function () use ($data, $aspirantId) {

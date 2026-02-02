@@ -10,18 +10,21 @@ export const Login = () => {
 
     const handleSubmit = async (values) => {
         try {
-            const response = await loginMutation.mutateAsync({
-                url: 'auth.authenticate',
-                params: {},
-                data: values
-            });
-            if (response.data.success) {
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-            }
+          const response = await loginMutation.mutateAsync({
+            url: "auth.authenticate",
+            params: {},
+            data: values,
+          });
+    
+          if (response?.data?.success) {
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+    
+            navigate("/admin/users", { replace: true }); 
+          }
         } catch (error) {
-            console.log(error);
+          console.log(error);
         }
-    };
+      };
 
     return (
         <>

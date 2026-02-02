@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class UpsertAspirantRequest extends FormRequest
 {
@@ -13,7 +14,7 @@ class UpsertAspirantRequest extends FormRequest
      */
     public function authorize()
     {
-        return false;
+        return Auth::guard('admin')->check();
     }
 
     /**
@@ -24,9 +25,11 @@ class UpsertAspirantRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => 'nullable|string|max:20',
+            'aspirant.name' => 'required|string|max:255',
+            'aspirant.email' => 'required|email',
+            'aspirant.phone' => 'nullable|string|max:20',
+            'aspirant.first_last_name' => 'required|string|max:255',
+            'aspirant.second_last_name' => 'nullable|string|max:255',
         ];
     }
 }

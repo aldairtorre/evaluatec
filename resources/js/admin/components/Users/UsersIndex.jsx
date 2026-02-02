@@ -129,7 +129,7 @@ export const UsersIndex = () => {
                                 />
                             ))}
                         </main>
-                        
+
                         <Paginator
                             rows={3}
                             totalRecords={usersQuery.data?.total_rows}

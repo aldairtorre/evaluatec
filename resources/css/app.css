@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.logout-btn {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100%;
+    padding: 10px;
+    gap: 20px !important;
+    border: 0 !important;
+    background: transparent !important;
+    font-size: 17px !important;
+    margin-top: auto !important;
+    margin-bottom: 30px !important;
+    color: #ffffff;
+}
+
+.logout-icon {
+    height: 20px;
+    width: 25px;
+}
+
+.logout-title {
+    color: #000000;
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.logout-subtitle {
+    color: #000000;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+.logout-cancel {
+    padding: 12px 80px;
+    border-radius: 50px;
+    background: #E7E7E7;
+    color: #000000;
+}
+
+.logout-accept {
+    padding: 12px 80px;
+    border-radius: 50px;
+    background: #1B396A;
+    color: #ffffff;
+
+}
+
+.p-dropdown-label{
+    padding: 8px 16px;
+}
+
+.p-steps .p-steps-item.p-highlight .p-steps-number{
+    background-color: #1B396A;
+    color: #ffffff;
+}
+
+.swal2-container{
+    z-index: 9999;
+}
+
+.swal2-actions {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px; 
+}
+
+/* Carousel styles */
+.carousel {
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+    margin-top: 20px;
+}
+
+.carousel-track {
+    display: flex;
+    animation: scroll 10s linear infinite;
+    width: calc(200%);
+}
+
+.carousel-item {
+    min-width: 12.5%; 
+    flex: 1 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.p-steps-title {
+    color: var(--color-black);
+    font-size: 13px;
+    font-weight: 600;
+    width: 100px;
+    text-align: center;
+    white-space: break-spaces;
+}
+
+.p-dialog {
+    max-height: 100%;
+}
